@@ -71,7 +71,7 @@ export default function AdminPendingRequests() {
       <div style={styles.card}>
         <div style={styles.header}>
           <button style={styles.back} onClick={() => navigate("/admin-dashboard")}>
-            <-
+            {"<-"}
           </button>
           <h2 style={styles.title}>Pending Requests</h2>
         </div>
