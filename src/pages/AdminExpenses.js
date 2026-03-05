@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import api from "../api";
 import { useNavigate } from "react-router-dom";
 
@@ -7,16 +7,7 @@ export default function AdminExpenses() {
   const [total, setTotal] = useState(0);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const admin = JSON.parse(localStorage.getItem("admin"));
-    if (!admin || !admin.admin_id) {
-      navigate("/");
-      return;
-    }
-    loadPending();
-  }, []);
-
-  const loadPending = async () => {
+  const loadPending = useCallback(async () => {
     const res = await api.get("/admin/expenses/pending");
 
     const sorted = (res.data || []).sort((a, b) =>
@@ -28,7 +19,16 @@ export default function AdminExpenses() {
     let sum = 0;
     sorted.forEach(r => sum += Number(r.amount || 0));
     setTotal(sum);
-  };
+  }, []);
+
+  useEffect(() => {
+    const admin = JSON.parse(localStorage.getItem("admin"));
+    if (!admin || !admin.admin_id) {
+      navigate("/");
+      return;
+    }
+    loadPending();
+  }, [navigate, loadPending]);
 
   const approve = async (id) => {
     await api.put(`/admin/expenses/${id}/approve`);

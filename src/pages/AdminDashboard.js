@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 
@@ -11,6 +11,15 @@ export default function AdminDashboard() {
     pendingExpenses: 0,
     pendingTickets: 0
   });
+
+  const loadSummary = useCallback(async () => {
+    try {
+      const res = await api.get("/admin/summary");
+      setSummary(res.data);
+    } catch (err) {
+      console.error("Failed to load admin summary", err);
+    }
+  }, []);
 
   useEffect(() => {
     const raw = localStorage.getItem("admin");
@@ -34,16 +43,7 @@ export default function AdminDashboard() {
 
     // Load summary from DB
     loadSummary();
-  }, []);
-
-  const loadSummary = async () => {
-    try {
-      const res = await api.get("/admin/summary");
-      setSummary(res.data);
-    } catch (err) {
-      console.error("Failed to load admin summary", err);
-    }
-  };
+  }, [navigate, loadSummary]);
 
   const logout = () => {
     localStorage.removeItem("admin");

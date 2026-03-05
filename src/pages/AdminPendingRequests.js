@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 
@@ -9,16 +9,7 @@ export default function AdminPendingRequests() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const admin = JSON.parse(localStorage.getItem("admin"));
-    if (!admin || !admin.admin_id) {
-      navigate("/");
-      return;
-    }
-    loadExpenses();
-  }, []);
-
-  const loadExpenses = async () => {
+  const loadExpenses = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get("/admin/expenses/pending");
@@ -30,7 +21,7 @@ export default function AdminPendingRequests() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const loadTickets = async () => {
     setLoading(true);
@@ -45,6 +36,15 @@ export default function AdminPendingRequests() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const admin = JSON.parse(localStorage.getItem("admin"));
+    if (!admin || !admin.admin_id) {
+      navigate("/");
+      return;
+    }
+    loadExpenses();
+  }, [navigate, loadExpenses]);
 
   const approveExpense = async (id) => {
     await api.put(`/admin/expenses/${id}/approve`);

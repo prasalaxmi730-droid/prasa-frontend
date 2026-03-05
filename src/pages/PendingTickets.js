@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 import "../styles/expense.css";
@@ -14,14 +14,10 @@ export default function PendingTickets() {
     if (stored) setEmployee(JSON.parse(stored));
   }, []);
 
-  useEffect(() => {
+  const loadPending = useCallback(async () => {
     if (!employee) return;
-    loadPending();
-  }, [employee]);
 
-  const loadPending = async () => {
     try {
-      // 🔥 FIX: use real backend route
       const res = await api.get(`/ticket-system/pending/${employee.emp_id}`);
       setRows(res.data || []);
     } catch (err) {
@@ -29,7 +25,12 @@ export default function PendingTickets() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [employee]);
+
+  useEffect(() => {
+    if (!employee) return;
+    loadPending();
+  }, [employee, loadPending]);
 
   const openEdit = (row) => {
     localStorage.setItem("editTicket", JSON.stringify(row));
@@ -48,13 +49,15 @@ export default function PendingTickets() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 10, borderBottom: "1px solid #ddd" }}>
-          <button className="back-btn" onClick={() => navigate("/ticket-system")}>←</button>
+          <button className="back-btn" onClick={() => navigate("/ticket-system")}>
+            {"<-"}
+          </button>
           <h3 style={{ flex: 1, textAlign: "center" }}>Pending Tickets</h3>
           <div style={{ width: 30 }}></div>
         </div>
 
         <div className="mobile-list" style={{ marginTop: 10, overflowY: "auto", flex: 1 }}>
-          {loading && <p>Loading…</p>}
+          {loading && <p>Loading...</p>}
 
           {rows.map((r) => (
             <div key={r.id} className="mobile-card">
@@ -65,23 +68,22 @@ export default function PendingTickets() {
 
               {r.status === "pending" && (
                 <button
-  onClick={() => openEdit(r)}
-  style={{
-    marginTop: 8,
-    backgroundColor: "var(--primary)",
-    color: "#fff",
-    border: "none",
-    padding: "8px 14px",
-    borderRadius: 8,
-    fontSize: 14,
-    fontWeight: 600,
-    cursor: "pointer",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.15)"
-  }}
->
-  Edit
-</button>
-
+                  onClick={() => openEdit(r)}
+                  style={{
+                    marginTop: 8,
+                    backgroundColor: "var(--primary)",
+                    color: "#fff",
+                    border: "none",
+                    padding: "8px 14px",
+                    borderRadius: 8,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.15)"
+                  }}
+                >
+                  Edit
+                </button>
               )}
             </div>
           ))}

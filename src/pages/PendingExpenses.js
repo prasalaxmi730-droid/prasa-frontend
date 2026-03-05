@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api, { BACKEND_ORIGIN } from "../api";
 import "../styles/expense.css";
@@ -11,12 +11,7 @@ export default function PendingExpenses() {
   const employee = JSON.parse(localStorage.getItem("employee"));
   const emp_id = employee?.emp_id;
 
-  useEffect(() => {
-    if (!emp_id) return;
-    loadPending();
-  }, []);
-
-  const loadPending = async () => {
+  const loadPending = useCallback(async () => {
     try {
       const res = await api.get("/expenses/active", {
         params: { emp_id }
@@ -27,7 +22,12 @@ export default function PendingExpenses() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [emp_id]);
+
+  useEffect(() => {
+    if (!emp_id) return;
+    loadPending();
+  }, [emp_id, loadPending]);
 
   return (
     <div className="expense-page">

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 
@@ -17,6 +17,17 @@ export default function TicketSystem() {
   });
 
   const [editId, setEditId] = useState(null);
+
+  const loadEmployees = useCallback(async () => {
+    try {
+      const res = await api.get("/auth/employees", {
+        params: { exclude: emp_id }
+      });
+      setEmployees(res.data || []);
+    } catch {
+      setEmployees([]);
+    }
+  }, [emp_id]);
 
   useEffect(() => {
     if (!emp_id) {
@@ -39,18 +50,7 @@ export default function TicketSystem() {
 
       localStorage.removeItem("editTicket");
     }
-  }, []);
-
-  const loadEmployees = async () => {
-    try {
-      const res = await api.get("/auth/employees", {
-        params: { exclude: emp_id }
-      });
-      setEmployees(res.data || []);
-    } catch {
-      setEmployees([]);
-    }
-  };
+  }, [emp_id, navigate, loadEmployees]);
 
   const saveTicket = async () => {
     try {
