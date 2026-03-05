@@ -45,6 +45,13 @@ You can learn more in the [Create React App documentation](https://facebook.gith
 
 To learn React, check out the [React documentation](https://reactjs.org/).
 
+## Deployment Env (Cloudflare Pages)
+
+Set these environment variables in Cloudflare Pages:
+
+- `REACT_APP_API_BASE_URL` = `https://<your-render-backend>/api`
+- `REACT_APP_BACKEND_ORIGIN` = `https://<your-render-backend>`
+
 ### Code Splitting
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)

@@ -1,44 +1,38 @@
-.addnew-page {
-  min-height: 100vh;
-  background: linear-gradient(#1f5d46, #e8f5ee);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+:root {
+  --bg-start: #f4f7fb;
+  --bg-end: #e8eff7;
+  --surface: #ffffff;
+  --surface-soft: #f8fbff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --primary: #0f4c81;
+  --primary-hover: #0b3b65;
+  --border: #d8e2ec;
+  --shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
 }
 
-.back-arrow {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  background: white;
-  border: none;
-  border-radius: 50%;
-  font-size: 22px;
-  width: 42px;
-  height: 42px;
-  cursor: pointer;
+* {
+  box-sizing: border-box;
 }
 
-.addnew-title {
-  color: white;
-  margin-bottom: 20px;
+body {
+  margin: 0;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  color: var(--text);
+  background: linear-gradient(160deg, var(--bg-start), var(--bg-end));
 }
 
-.addnew-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
+button,
+input,
+textarea,
+select {
+  font: inherit;
 }
 
-.addnew-card {
-  width: 300px;
-  padding: 18px;
-  background: white;
-  border-radius: 14px;
-  text-align: center;
-  font-size: 18px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+button {
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
 }

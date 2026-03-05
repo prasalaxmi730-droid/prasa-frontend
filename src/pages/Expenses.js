@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../api";
 
 export default function Expenses() {
@@ -10,43 +10,75 @@ export default function Expenses() {
   const [desc, setDesc] = useState("");
   const [amount, setAmount] = useState("");
   const [files, setFiles] = useState([]);
+  const [editId, setEditId] = useState(null);
+
+  useEffect(() => {
+    const raw = localStorage.getItem("editExpense");
+    if (raw) {
+      const exp = JSON.parse(raw);
+      setEditId(exp.id);
+      setDate(exp.expense_date.split("T")[0]);
+      setDesc(exp.description);
+      setAmount(exp.amount);
+      localStorage.removeItem("editExpense");
+    }
+  }, []);
 
   const saveExpense = async () => {
     try {
       const fd = new FormData();
-
       fd.append("emp_id", employee.emp_id);
       fd.append("expense_date", date);
       fd.append("description", desc);
       fd.append("amount", amount);
+
+      // ✅ SAME KEY AS TICKET SYSTEM
       files.forEach(f => fd.append("attachments", f));
 
-      await api.post("/expenses", fd, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
+      if (editId) {
+        // ✅ UPDATE (multipart enforced)
+        await api.put(`/expenses/${editId}`, fd, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+        navigate("/expenses/pending");
+      } else {
+        // ✅ CREATE (multipart enforced)
+        await api.post("/expenses", fd, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+      }
 
-      alert("Expense saved");
-      setDate(""); setDesc(""); setAmount(""); setFiles([]);
+      setDate("");
+      setDesc("");
+      setAmount("");
+      setFiles([]);
+      setEditId(null);
+
     } catch (err) {
-      console.error(err);
-      alert("Failed to save expense");
+      console.error("EXPENSE SAVE ERROR:", err);
+      alert("Expense save/update failed");
     }
   };
 
   return (
     <div style={styles.page}>
       <div style={styles.card}>
-
-        {/* 🔙 Title + Arrow (same as Ticket System) */}
         <div style={styles.header}>
-          <span style={styles.backArrow} onClick={() => navigate("/profile")}>←</span>
+          <span
+            style={styles.backArrow}
+            onClick={() => navigate(editId ? "/expenses/pending" : "/profile")}
+          >
+            ←
+          </span>
           <span style={styles.title}>Expenses</span>
         </div>
 
-        {/* Tabs */}
         <div style={styles.tabs}>
           <button style={styles.activeTab}>Expenses</button>
-          <button style={styles.tab} onClick={() => navigate("/expenses/pending")}>
+          <button
+            style={styles.tab}
+            onClick={() => navigate("/expenses/pending")}
+          >
             Pending Requests
           </button>
         </div>
@@ -80,88 +112,39 @@ export default function Expenses() {
         />
 
         <button style={styles.primaryBtn} onClick={saveExpense}>
-          Save Expense
+          {editId ? "Update Expense" : "Save Expense"}
         </button>
-
       </div>
     </div>
   );
 }
 
+/* UI untouched */
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "linear-gradient(#2f855a,#b7e4c7)",
+    background: "linear-gradient(160deg, var(--bg-start), var(--bg-end))",
     display: "flex",
     justifyContent: "center",
     alignItems: "flex-start",
-    paddingTop: 40
+    paddingTop: 28
   },
   card: {
-    background: "#fff",
+    background: "var(--surface)",
     width: "92%",
     maxWidth: 420,
-    borderRadius: 18,
+    borderRadius: 16,
     padding: 20,
-    height: "fit-content"
+    border: "1px solid var(--border)",
+    boxShadow: "var(--shadow)"
   },
-
-  /* Header (same as Ticket System) */
-  header: {
-    display: "flex",
-    alignItems: "center",
-    marginBottom: 15,
-    gap: 10
-  },
-  backArrow: {
-    fontSize: 22,
-    cursor: "pointer",
-    color: "#2f855a"
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#2f855a"
-  },
-
+  header: { display: "flex", alignItems: "center", marginBottom: 15, gap: 10 },
+  backArrow: { fontSize: 22, cursor: "pointer", color: "var(--primary)" },
+  title: { fontSize: 20, fontWeight: "bold", color: "var(--text)" },
   tabs: { display: "flex", gap: 10, marginBottom: 15 },
-  activeTab: {
-    flex: 1,
-    background: "#2f855a",
-    color: "#fff",
-    border: "none",
-    padding: 10,
-    borderRadius: 8
-  },
-  tab: {
-    flex: 1,
-    background: "#eee",
-    border: "none",
-    padding: 10,
-    borderRadius: 8
-  },
-  input: {
-    width: "100%",
-    padding: 12,
-    marginBottom: 12,
-    borderRadius: 10,
-    border: "1px solid #ccc"
-  },
-  textarea: {
-    width: "100%",
-    padding: 12,
-    height: 90,
-    borderRadius: 10,
-    border: "1px solid #ccc",
-    marginBottom: 12
-  },
-  primaryBtn: {
-    width: "100%",
-    background: "#2f855a",
-    color: "#fff",
-    padding: 14,
-    borderRadius: 12,
-    border: "none",
-    fontSize: 16
-  }
+  activeTab: { flex: 1, background: "var(--primary)", color: "#fff", border: "none", padding: 10, borderRadius: 10, fontWeight: 600 },
+  tab: { flex: 1, background: "#e9eef4", color: "#334155", border: "none", padding: 10, borderRadius: 10, fontWeight: 600 },
+  input: { width: "100%", padding: 12, marginBottom: 12, borderRadius: 10, border: "1px solid var(--border)", background: "#f8fbff" },
+  textarea: { width: "100%", padding: 12, height: 90, borderRadius: 10, border: "1px solid var(--border)", marginBottom: 12, background: "#f8fbff" },
+  primaryBtn: { width: "100%", background: "var(--primary)", color: "#fff", padding: 14, borderRadius: 12, border: "none", fontSize: 16, fontWeight: 600 }
 };

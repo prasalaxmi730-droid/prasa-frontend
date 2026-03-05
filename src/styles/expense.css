@@ -1,71 +1,72 @@
 .expense-page {
   min-height: 100vh;
-  background: linear-gradient(#2f855a, #b7e4c7);
+  background: linear-gradient(160deg, var(--bg-start), var(--bg-end));
   display: flex;
   justify-content: center;
-  padding: 12px;
+  padding: 14px;
 }
 
 .expense-card {
   width: 100%;
-  max-width: 380px;
-  background: #fff;
-  border-radius: 18px;
-  padding: 16px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  max-width: 420px;
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
 }
 
 .back-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: white;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #edf3fa;
+  color: var(--primary);
   border: none;
-  font-size: 22px;
+  font-size: 20px;
   cursor: pointer;
 }
 
 .expense-tabs {
   display: flex;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .tab-active {
   flex: 1;
-  background: #2f855a;
+  background: var(--primary);
   color: white;
-  padding: 8px;
+  padding: 9px;
   border-radius: 10px;
   border: none;
+  font-weight: 600;
 }
 
 .tab-inactive {
   flex: 1;
-  background: #e6e6e6;
-  padding: 8px;
+  background: #e9eef4;
+  color: #1e293b;
+  padding: 9px;
   border-radius: 10px;
   border: none;
+  font-weight: 600;
 }
 
 .primary-btn {
-  background: #2f855a;
+  background: var(--primary);
   color: white;
   border: none;
   padding: 10px 14px;
   border-radius: 10px;
+  font-weight: 600;
 }
 
-/* RESPONSIVE SWITCH */
-.desktop-only { display: block; }
-.mobile-only { display: none; }
-
-@media (max-width: 768px) {
-  .desktop-only { display: none; }
-  .mobile-only { display: block; }
+.primary-btn:hover,
+.tab-active:hover {
+  background: var(--primary-hover);
 }
 
-/* MOBILE CARDS */
 .mobile-list {
   display: flex;
   flex-direction: column;
@@ -73,12 +74,20 @@
 }
 
 .mobile-card {
-  background: #f4f6f5;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px;
   font-size: 14px;
+  color: #0f172a;
 }
 
 .mobile-row {
   margin-bottom: 6px;
+}
+
+@media (max-width: 768px) {
+  .expense-card {
+    padding: 14px;
+  }
 }

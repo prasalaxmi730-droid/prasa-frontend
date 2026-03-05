@@ -15,21 +15,24 @@ function Login() {
 
     try {
       if (role === "admin") {
-         const res = await api.post("/auth/admin/login", {
+        const res = await api.post("/admin/login", {
           admin_id: username,
           password
         });
 
-        localStorage.setItem("admin", JSON.stringify(res.data.admin));
+        const adminUser = res.data.admin || res.data.user;
+        localStorage.setItem("admin", JSON.stringify(adminUser));
+        localStorage.setItem("token", res.data.token || "");
         localStorage.removeItem("employee");
         navigate("/admin-dashboard");
       } else {
-          const res = await api.post("/auth/login", {
+        const res = await api.post("/auth/login", {
           emp_id: username,
           password
         });
 
-        localStorage.setItem("employee", JSON.stringify(res.data.employee));
+        localStorage.setItem("employee", JSON.stringify(res.data.user));
+        localStorage.setItem("token", res.data.token || "");
         localStorage.removeItem("admin");
         navigate("/profile");
       }
@@ -60,7 +63,6 @@ function Login() {
             required
           />
 
-          {/* 🔥 EMPLOYEE ○ ADMIN ○ — ONE LINE */}
           <div className="role-row">
             <label>
               <input

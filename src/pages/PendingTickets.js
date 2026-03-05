@@ -11,9 +11,7 @@ export default function PendingTickets() {
 
   useEffect(() => {
     const stored = localStorage.getItem("employee");
-    if (stored) {
-      setEmployee(JSON.parse(stored));
-    }
+    if (stored) setEmployee(JSON.parse(stored));
   }, []);
 
   useEffect(() => {
@@ -23,9 +21,8 @@ export default function PendingTickets() {
 
   const loadPending = async () => {
     try {
-      const res = await api.get("/ticket-system/active", {
-        params: { emp_id: employee.emp_id }
-      });
+      // 🔥 FIX: use real backend route
+      const res = await api.get(`/ticket-system/pending/${employee.emp_id}`);
       setRows(res.data || []);
     } catch (err) {
       console.log("pending ticket error", err);
@@ -34,10 +31,13 @@ export default function PendingTickets() {
     }
   };
 
-  return (
-    <div className="expense-page" style={{ position: "relative" }}>
+  const openEdit = (row) => {
+    localStorage.setItem("editTicket", JSON.stringify(row));
+    navigate("/ticket-system");
+  };
 
-      {/* White box container placed at TOP */}
+  return (
+    <div className="expense-page">
       <div
         className="expense-card"
         style={{
@@ -47,48 +47,13 @@ export default function PendingTickets() {
           flexDirection: "column"
         }}
       >
-
-        {/* Header with arrow inside the box */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            paddingBottom: 10,
-            borderBottom: "1px solid #ddd"
-          }}
-        >
-          <button
-            className="back-btn"
-            onClick={() => navigate("/ticket-system")}
-            style={{
-              background: "none",
-              border: "none",
-              fontSize: 22,
-              cursor: "pointer"
-            }}
-          >
-            ←
-          </button>
-
-          <h3 style={{ margin: 0, flex: 1, textAlign: "center" }}>
-            Pending Tickets
-          </h3>
-
-          {/* Spacer so title stays centered */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 10, borderBottom: "1px solid #ddd" }}>
+          <button className="back-btn" onClick={() => navigate("/ticket-system")}>←</button>
+          <h3 style={{ flex: 1, textAlign: "center" }}>Pending Tickets</h3>
           <div style={{ width: 30 }}></div>
         </div>
 
-        {/* Scrollable content */}
-        <div
-          className="mobile-list"
-          style={{
-            marginTop: 10,
-            overflowY: "auto",
-            flex: 1,
-            paddingRight: 5
-          }}
-        >
+        <div className="mobile-list" style={{ marginTop: 10, overflowY: "auto", flex: 1 }}>
           {loading && <p>Loading…</p>}
 
           {rows.map((r) => (
@@ -97,6 +62,27 @@ export default function PendingTickets() {
               <div><b>Assigned To:</b> {r.assigned_to}</div>
               <div><b>Description:</b> {r.description}</div>
               <div><b>Status:</b> {r.status}</div>
+
+              {r.status === "pending" && (
+                <button
+  onClick={() => openEdit(r)}
+  style={{
+    marginTop: 8,
+    backgroundColor: "var(--primary)",
+    color: "#fff",
+    border: "none",
+    padding: "8px 14px",
+    borderRadius: 8,
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: "pointer",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.15)"
+  }}
+>
+  Edit
+</button>
+
+              )}
             </div>
           ))}
 

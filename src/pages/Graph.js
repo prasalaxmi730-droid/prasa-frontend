@@ -53,13 +53,15 @@ const Graph = () => {
   };
 
   return (
-    <div style={{ background: "#9fd3b4", minHeight: "100vh", padding: "12px" }}>
+    <div style={{ background: "linear-gradient(160deg, var(--bg-start), var(--bg-end))", minHeight: "100vh", padding: "14px" }}>
       {/* ===== HEADER INSIDE CARD ===== */}
       <div
         style={{
           background: "#ffffff",
           borderRadius: "16px",
-          padding: "12px",
+          border: "1px solid var(--border)",
+          boxShadow: "var(--shadow)",
+          padding: "14px",
           maxWidth: "360px",
           margin: "0 auto 16px auto",
         }}
@@ -82,13 +84,13 @@ const Graph = () => {
               border: "none",
               fontSize: "22px",
               cursor: "pointer",
-              color: "#0f3d2e",
+              color: "var(--primary)",
             }}
           >
             ←
           </button>
 
-          <h3 style={{ color: "#0f3d2e", margin: 0 }}>
+          <h3 style={{ color: "var(--text)", margin: 0 }}>
             My Monthly Summary
           </h3>
         </div>
@@ -116,7 +118,9 @@ const Graph = () => {
         style={{
           background: "#ffffff",
           borderRadius: "16px",
-          padding: "12px",
+          border: "1px solid var(--border)",
+          boxShadow: "var(--shadow)",
+          padding: "14px",
           maxWidth: "360px",
           margin: "0 auto",
         }}

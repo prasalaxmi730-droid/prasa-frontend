@@ -1,12 +1,34 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/profile.css";
 
 const Profile = () => {
   const navigate = useNavigate();
   const [openMenu, setOpenMenu] = useState(false);
+  const [employee, setEmployee] = useState(null);
 
-  const employee = JSON.parse(localStorage.getItem("employee")) || {};
+  // ✅ Load employee safely on mount
+  useEffect(() => {
+    const raw = localStorage.getItem("employee");
+
+    if (!raw || raw === "undefined") {
+      localStorage.removeItem("employee");
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(raw);
+      setEmployee(parsed);
+    } catch {
+      localStorage.removeItem("employee");
+      navigate("/login");
+    }
+  }, [navigate]);
+
+  // While loading
+  if (!employee) return null;
+
   const employeeName = employee.emp_name || "Employee";
   const empId = employee.emp_id || "N/A";
 
@@ -24,9 +46,8 @@ const Profile = () => {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(#2f855a, #b7e4c7)" }}>
-      <div className="profile-page">
-        <div className="profile-container">
+    <div className="profile-page">
+      <div className="profile-container">
 
           <div className="profile-topbar">
             <span className="hamburger" onClick={() => setOpenMenu(true)}>☰</span>
@@ -87,7 +108,6 @@ const Profile = () => {
             </div>
           </div>
 
-        </div>
       </div>
     </div>
   );

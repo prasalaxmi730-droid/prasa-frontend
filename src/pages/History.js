@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api";
+import api, { BACKEND_ORIGIN } from "../api";
 import "../styles/expense.css";
+
+// URL builder (UNCHANGED)
+const getPdfUrl = (file) => {
+  if (!file) return "";
+  if (file.startsWith("http")) return file;
+  if (file.startsWith("uploads/")) return `${BACKEND_ORIGIN}/${file}`;
+  return `${BACKEND_ORIGIN}/uploads/${file}`;
+};
 
 export default function History() {
   const navigate = useNavigate();
@@ -12,6 +20,7 @@ export default function History() {
   const [data, setData] = useState([]);
   const [filter, setFilter] = useState({ from: "", to: "" });
   const [loading, setLoading] = useState(false);
+  const [previewPdf, setPreviewPdf] = useState(null);
 
   useEffect(() => {
     if (!emp_id) {
@@ -19,18 +28,39 @@ export default function History() {
       return;
     }
     fetchHistory();
+    // eslint-disable-next-line
   }, [type]);
 
   const fetchHistory = async () => {
     setLoading(true);
     try {
+      // ✅ BILLS FETCH (APPROVED FILES ONLY)
+      if (type === "bills") {
+        const res = await api.get("/history/bills");
+        setData(res.data || []);
+        setLoading(false); // 🔥 FIX: stop loading for Bills
+        return;
+      }
+
+      // EXISTING LOGIC (UNCHANGED)
       const params = { emp_id };
       if (filter.from) params.from = filter.from;
       if (filter.to) params.to = filter.to;
 
       const res = await api.get(`/history/${type}`, { params });
-      setData(res.data || []);
-    } catch {
+
+      const normalized = (res.data || []).map(r => ({
+        ...r,
+        voucher_files: r.voucher_path
+          ? r.voucher_path.split(",").map(f => f.trim())
+          : r.attachment_paths
+            ? r.attachment_paths.split(",").map(f => f.trim())
+            : []
+      }));
+
+      setData(normalized);
+    } catch (err) {
+      console.error("History error:", err);
       setData([]);
     } finally {
       setLoading(false);
@@ -38,74 +68,203 @@ export default function History() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#9fd3b4", paddingTop: 8 }}>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, var(--bg-start), var(--bg-end))", paddingTop: 12 }}>
       <div className="expense-page" style={{ display: "flex", justifyContent: "center" }}>
-        <div
-          className="expense-card"
-          style={{
-            width: "100%",
-            maxWidth: 420,
-            marginTop: 8,
-            paddingTop: 10
-          }}
-        >
-          {/* Compact header: arrow + title in one line */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              marginBottom: 8
-            }}
-          >
+        <div className="expense-card" style={{ width: "100%", maxWidth: 420, marginTop: 8 }}>
+
+          {/* Header */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <button
               onClick={() => navigate("/profile")}
               style={{
-                background: "#2f7d4e",
-                color: "#fff",
-                borderRadius: "50%",
-                width: 32,
-                height: 32,
+                background: "#edf3fa",
+                color: "var(--primary)",
+                borderRadius: 10,
+                width: 36,
+                height: 36,
                 border: "none",
-                fontSize: 18,
-                cursor: "pointer",
-                flexShrink: 0
+                fontSize: 18
               }}
             >
               ←
             </button>
-            <h2 style={{ margin: 0, fontSize: 20 }}>History</h2>
+            <h2>History</h2>
           </div>
 
+          {/* Tabs */}
           <div className="expense-tabs">
-            <button className={type === "expenses" ? "tab-active" : "tab-inactive"} onClick={() => setType("expenses")}>Expenses</button>
-            <button className={type === "bills" ? "tab-active" : "tab-inactive"} onClick={() => setType("bills")}>Bills</button>
-            <button className={type === "ticket-system" ? "tab-active" : "tab-inactive"} onClick={() => setType("ticket-system")}>Ticket System</button>
+            <button
+              className={type === "expenses" ? "tab-active" : "tab-inactive"}
+              onClick={() => setType("expenses")}
+            >
+              Expenses
+            </button>
+            <button
+              className={type === "bills" ? "tab-active" : "tab-inactive"}
+              onClick={() => setType("bills")}
+            >
+              Bills
+            </button>
+            <button
+              className={type === "ticket-system" ? "tab-active" : "tab-inactive"}
+              onClick={() => setType("ticket-system")}
+            >
+              Ticket System
+            </button>
           </div>
 
+          {/* Filters */}
           <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-            <input type="date" value={filter.from} onChange={(e) => setFilter({ ...filter, from: e.target.value })} />
-            <input type="date" value={filter.to} onChange={(e) => setFilter({ ...filter, to: e.target.value })} />
-            <button className="primary-btn" onClick={fetchHistory}>Apply</button>
+            <input
+              type="date"
+              value={filter.from}
+              onChange={(e) => setFilter({ ...filter, from: e.target.value })}
+            />
+            <input
+              type="date"
+              value={filter.to}
+              onChange={(e) => setFilter({ ...filter, to: e.target.value })}
+            />
+            <button className="primary-btn" onClick={fetchHistory}>
+              Apply
+            </button>
           </div>
 
           {loading && <p>Loading…</p>}
 
-          {/* Scrollable list */}
-          <div style={{ maxHeight: "65vh", overflowY: "auto", paddingRight: 6 }}>
-            {data.map((r) => (
-              <div key={r.id} className="mobile-card">
-                <div><b>Date:</b> {new Date(r.date || r.expense_date || r.ticket_date).toLocaleDateString()}</div>
-                {type === "ticket-system" && <div><b>Assigned To:</b> {r.assigned_to}</div>}
-                <div><b>Description:</b> {r.description}</div>
-                {type !== "ticket-system" && <div><b>Amount:</b> ₹{r.amount}</div>}
-                <div><b>Status:</b> {r.status}</div>
+          {/* ================= BILLS SECTION ================= */}
+          <div style={{ maxHeight: "65vh", overflowY: "auto" }}>
+            {type === "bills" &&
+              data.length > 0 &&
+              data[0].voucher_files &&
+              data[0].voucher_files.length > 0 &&
+              data[0].voucher_files.map((file, i) => (
+                <div key={i} className="mobile-card" style={{ marginBottom: 12 }}>
+                  <div
+                    onClick={() => setPreviewPdf(getPdfUrl(file))}
+                    style={{
+                      display: "flex",
+                      gap: 12,
+                      padding: 12,
+                      border: "1px solid #ccc",
+                      borderRadius: 8,
+                      background: "#f7f7f7",
+                      cursor: "pointer"
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 48,
+                        height: 60,
+                        background: "var(--primary)",
+                        color: "#fff",
+                        fontWeight: "bold",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderRadius: 6
+                      }}
+                    >
+                      PDF
+                    </div>
+                    <div style={{ wordBreak: "break-all" }}>
+                      {file.split("/").pop()}
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                    <a href={getPdfUrl(file)} download className="secondary-btn">
+                      Download
+                    </a>
+                    <button
+                      className="secondary-btn"
+                      onClick={() =>
+                        navigator.share
+                          ? navigator.share({ title: "Bill PDF", url: getPdfUrl(file) })
+                          : window.open(getPdfUrl(file), "_blank")
+                      }
+                    >
+                      Share
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+            {type === "expenses" && data.map((row) => (
+              <div key={row.id} className="mobile-card" style={{ marginBottom: 10 }}>
+                <div><b>Date:</b> {new Date(row.expense_date).toLocaleDateString()}</div>
+                <div><b>Description:</b> {row.description}</div>
+                <div><b>Amount:</b> ₹{row.amount}</div>
+                <div><b>Status:</b> {row.status}</div>
+                {row.voucher_files?.length > 0 && (
+                  <div style={{ marginTop: 6 }}>
+                    <b>Files:</b>{" "}
+                    {row.voucher_files.map((file, idx) => (
+                      <a
+                        key={idx}
+                        href={getPdfUrl(file)}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ marginRight: 8, color: "var(--primary)" }}
+                      >
+                        {file.split("/").pop()}
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
-            {!loading && data.length === 0 && <p style={{ textAlign: "center" }}>No records found.</p>}
+
+            {type === "ticket-system" && data.map((row) => (
+              <div key={row.id} className="mobile-card" style={{ marginBottom: 10 }}>
+                <div><b>Date:</b> {new Date(row.ticket_date).toLocaleDateString()}</div>
+                <div><b>Assigned To:</b> {row.assigned_to || "-"}</div>
+                <div><b>Description:</b> {row.description}</div>
+                <div><b>Status:</b> {row.status}</div>
+                {row.voucher_files?.length > 0 && (
+                  <div style={{ marginTop: 6 }}>
+                    <b>Files:</b>{" "}
+                    {row.voucher_files.map((file, idx) => (
+                      <a
+                        key={idx}
+                        href={getPdfUrl(file)}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ marginRight: 8, color: "var(--primary)" }}
+                      >
+                        {file.split("/").pop()}
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {!loading && type !== "bills" && data.length === 0 && (
+              <p style={{ textAlign: "center" }}>No history records</p>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Fullscreen PDF Viewer */}
+      {previewPdf && (
+        <div
+          onClick={() => setPreviewPdf(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.8)",
+            zIndex: 9999
+          }}
+        >
+          <iframe
+            src={previewPdf}
+            title="PDF Viewer"
+            style={{ width: "100%", height: "100%" }}
+          />
+        </div>
+      )}
     </div>
   );
 }

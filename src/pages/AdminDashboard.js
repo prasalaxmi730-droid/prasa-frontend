@@ -5,22 +5,34 @@ import api from "../api";
 export default function AdminDashboard() {
   const navigate = useNavigate();
 
+  const [admin, setAdmin] = useState(null);
   const [summary, setSummary] = useState({
     approvedAmount: 0,
     pendingExpenses: 0,
     pendingTickets: 0
   });
 
-  const [admin, setAdmin] = useState(null);
-
   useEffect(() => {
-    const storedAdmin = JSON.parse(localStorage.getItem("admin"));
-    if (!storedAdmin) {
-      navigate("/");
+    const raw = localStorage.getItem("admin");
+
+    if (!raw || raw === "undefined") {
+      navigate("/login");
       return;
     }
 
+    let storedAdmin;
+    try {
+      storedAdmin = JSON.parse(raw);
+    } catch {
+      localStorage.removeItem("admin");
+      navigate("/login");
+      return;
+    }
+
+    // 🔥 Use admin directly from login response
     setAdmin(storedAdmin);
+
+    // Load summary from DB
     loadSummary();
   }, []);
 
@@ -29,29 +41,38 @@ export default function AdminDashboard() {
       const res = await api.get("/admin/summary");
       setSummary(res.data);
     } catch (err) {
-      console.error("Summary load failed", err);
+      console.error("Failed to load admin summary", err);
     }
   };
 
   const logout = () => {
     localStorage.removeItem("admin");
-    navigate("/");
+    localStorage.removeItem("token");
+    navigate("/login");
   };
+
+  if (!admin) {
+    return (
+      <div style={{ color: "white", textAlign: "center", marginTop: 40 }}>
+        Loading admin dashboard...
+      </div>
+    );
+  }
 
   return (
     <div style={styles.page}>
       <div style={styles.card}>
         <h2 style={styles.title}>Admin Dashboard</h2>
 
-        {admin && (
-          <div style={styles.section}>
-            <h4>Admin Details</h4>
-            <p><b>Name:</b> {admin.name}</p>
-            <p><b>ID:</b> {admin.admin_id}</p>
-            <p><b>Email:</b> {admin.email}</p>
-          </div>
-        )}
+        {/* Admin Details */}
+        <div style={styles.section}>
+          <h4>Admin Details</h4>
+          <p><b>Name:</b> {admin.name}</p>
+          <p><b>ID:</b> {admin.admin_id}</p>
+          <p><b>Email:</b> {admin.email}</p>
+        </div>
 
+        {/* Summary */}
         <div style={styles.section}>
           <h4>Summary</h4>
           <p><b>Total Approved:</b> ₹{summary.approvedAmount}</p>
@@ -59,6 +80,7 @@ export default function AdminDashboard() {
           <p><b>Pending Tickets:</b> {summary.pendingTickets}</p>
         </div>
 
+        {/* Buttons */}
         <div style={styles.actions}>
           <button style={styles.btn} onClick={() => navigate("/admin-expenses")}>
             Expense Approvals
@@ -77,6 +99,7 @@ export default function AdminDashboard() {
   );
 }
 
+/* Styles – your old UI look */
 const styles = {
   page: {
     minHeight: "100vh",

@@ -9,18 +9,36 @@ export default function TicketSystem() {
 
   const [employees, setEmployees] = useState([]);
   const [files, setFiles] = useState([]);
+
   const [form, setForm] = useState({
     ticket_date: "",
     assigned_to: "",
     task: ""
   });
 
+  const [editId, setEditId] = useState(null);
+
   useEffect(() => {
     if (!emp_id) {
       navigate("/login");
       return;
     }
+
     loadEmployees();
+
+    const raw = localStorage.getItem("editTicket");
+    if (raw) {
+      const t = JSON.parse(raw);
+
+      setEditId(t.id);
+      setForm({
+        ticket_date: t.ticket_date.split("T")[0],
+        assigned_to: t.assigned_to || "",
+        task: t.description || ""
+      });
+
+      localStorage.removeItem("editTicket");
+    }
   }, []);
 
   const loadEmployees = async () => {
@@ -37,18 +55,34 @@ export default function TicketSystem() {
   const saveTicket = async () => {
     try {
       const fd = new FormData();
-      fd.append("emp_id", emp_id);
       fd.append("ticket_date", form.ticket_date);
       fd.append("assigned_to", form.assigned_to);
       fd.append("description", form.task);
       files.forEach(f => fd.append("attachments", f));
 
-      await api.post("/ticket-system", fd);
-      alert("Ticket saved");
+      if (editId) {
+        // 🔥 FIX: UPDATE must use multipart/form-data (multer backend)
+        await api.put(`/ticket-system/${editId}`, fd, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+
+        alert("Ticket updated");
+        navigate("/tickets/pending");
+      } else {
+        // ➕ NEW
+        fd.append("emp_id", emp_id);
+
+        await api.post("/ticket-system", fd, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+        alert("Ticket saved");
+      }
 
       setForm({ ticket_date: "", assigned_to: "", task: "" });
       setFiles([]);
-    } catch {
+      setEditId(null);
+    } catch (err) {
+      console.error("TICKET SAVE ERROR:", err);
       alert("Failed to save ticket");
     }
   };
@@ -56,9 +90,13 @@ export default function TicketSystem() {
   return (
     <div style={styles.page}>
       <div style={styles.card}>
-        {/* 🔙 HEADER WITH BACK + TITLE */}
         <div style={styles.header}>
-          <button style={styles.backBtn} onClick={() => navigate("/profile")}>
+          <button
+            style={styles.backBtn}
+            onClick={() =>
+              navigate(editId ? "/tickets/pending" : "/profile")
+            }
+          >
             ←
           </button>
           <h3 style={styles.headerTitle}>Ticket System</h3>
@@ -106,105 +144,42 @@ export default function TicketSystem() {
         />
 
         <button style={styles.primaryBtn} onClick={saveTicket}>
-          Save Ticket
+          {editId ? "Update Ticket" : "Save Ticket"}
         </button>
       </div>
     </div>
   );
 }
 
+/* UI unchanged */
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "linear-gradient(#2f855a,#b7e4c7)",
+    background: "linear-gradient(160deg, var(--bg-start), var(--bg-end))",
     display: "flex",
     justifyContent: "center",
     alignItems: "flex-start",
-    paddingTop: 40,
+    paddingTop: 28,
     paddingBottom: 20
   },
-
   card: {
-    background: "#fff",
+    background: "var(--surface)",
     width: "92%",
     maxWidth: 420,
-    borderRadius: 18,
+    borderRadius: 16,
     padding: 18,
-    boxSizing: "border-box"
+    boxSizing: "border-box",
+    border: "1px solid var(--border)",
+    boxShadow: "var(--shadow)"
   },
-
-  /* 🔝 HEADER (Arrow + Title inside card) */
-  header: {
-    display: "flex",
-    alignItems: "center",
-    marginBottom: 10
-  },
-  backBtn: {
-    background: "none",
-    border: "none",
-    fontSize: 22,
-    marginRight: 10,
-    cursor: "pointer"
-  },
-  headerTitle: {
-    margin: 0,
-    fontSize: 18,
-    fontWeight: 600,
-    color: "#2f855a"
-  },
-
-  tabs: {
-    display: "flex",
-    gap: 10,
-    marginBottom: 15
-  },
-
-  activeTab: {
-    flex: 1,
-    background: "#2f855a",
-    color: "#fff",
-    border: "none",
-    padding: 10,
-    borderRadius: 8
-  },
-
-  tab: {
-    flex: 1,
-    background: "#eee",
-    border: "none",
-    padding: 10,
-    borderRadius: 8
-  },
-
-  input: {
-    width: "100%",
-    padding: 12,
-    marginBottom: 12,
-    borderRadius: 10,
-    border: "1px solid #ccc",
-    boxSizing: "border-box"
-  },
-
-  textarea: {
-    width: "100%",
-    padding: 12,
-    height: 90,
-    borderRadius: 10,
-    border: "1px solid #ccc",
-    marginBottom: 12,
-    boxSizing: "border-box"
-  },
-
-  fileInput: {
-    marginBottom: 12
-  },
-
-  primaryBtn: {
-    width: "100%",
-    background: "#2f855a",
-    color: "#fff",
-    padding: 14,
-    borderRadius: 12,
-    border: "none"
-  }
+  header: { display: "flex", alignItems: "center", marginBottom: 10 },
+  backBtn: { background: "none", border: "none", fontSize: 22, marginRight: 10, cursor: "pointer", color: "var(--primary)" },
+  headerTitle: { margin: 0, fontSize: 18, fontWeight: 700, color: "var(--text)" },
+  tabs: { display: "flex", gap: 10, marginBottom: 15 },
+  activeTab: { flex: 1, background: "var(--primary)", color: "#fff", border: "none", padding: 10, borderRadius: 10, fontWeight: 600 },
+  tab: { flex: 1, background: "#e9eef4", color: "#334155", border: "none", padding: 10, borderRadius: 10, fontWeight: 600 },
+  input: { width: "100%", padding: 12, marginBottom: 12, borderRadius: 10, border: "1px solid var(--border)", background: "#f8fbff" },
+  textarea: { width: "100%", padding: 12, height: 90, borderRadius: 10, border: "1px solid var(--border)", marginBottom: 12, background: "#f8fbff" },
+  fileInput: { marginBottom: 12 },
+  primaryBtn: { width: "100%", background: "var(--primary)", color: "#fff", padding: 14, borderRadius: 12, border: "none", fontWeight: 600 }
 };

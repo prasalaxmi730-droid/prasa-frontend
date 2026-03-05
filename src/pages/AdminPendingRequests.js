@@ -46,14 +46,32 @@ export default function AdminPendingRequests() {
     }
   };
 
+  const approveExpense = async (id) => {
+    await api.put(`/admin/expenses/${id}/approve`);
+    loadExpenses();
+  };
+
+  const rejectExpense = async (id) => {
+    await api.put(`/admin/expenses/${id}/reject`);
+    loadExpenses();
+  };
+
+  const approveTicket = async (id) => {
+    await api.put(`/admin/tickets/${id}/approve`);
+    loadTickets();
+  };
+
+  const rejectTicket = async (id) => {
+    await api.put(`/admin/tickets/${id}/reject`);
+    loadTickets();
+  };
+
   return (
     <div style={styles.page}>
       <div style={styles.card}>
-
-        {/* 🔹 Back Arrow + Title (separate, not merged) */}
         <div style={styles.header}>
           <button style={styles.back} onClick={() => navigate("/admin-dashboard")}>
-            ←
+            <-
           </button>
           <h2 style={styles.title}>Pending Requests</h2>
         </div>
@@ -73,28 +91,32 @@ export default function AdminPendingRequests() {
           </button>
         </div>
 
-        {/* 🔹 Scrollable content area */}
         <div style={styles.listContainer}>
-          {!loading && activeTab === "expenses" &&
-            expenses.map(e => (
+          {!loading &&
+            activeTab === "expenses" &&
+            expenses.map((e) => (
               <div key={e.id} style={styles.item}>
                 <p><b>Employee:</b> {e.emp_id}</p>
                 <p><b>Date:</b> {e.expense_date}</p>
-                <p><b>Amount:</b> ₹{e.amount}</p>
+                <p><b>Amount:</b> Rs {e.amount}</p>
                 <p><b>Description:</b> {e.description}</p>
+                <button style={styles.actionBtn} onClick={() => approveExpense(e.id)}>Approve</button>
+                <button style={styles.rejectBtn} onClick={() => rejectExpense(e.id)}>Reject</button>
               </div>
             ))}
 
-          {!loading && activeTab === "tickets" &&
-            tickets.map(t => (
+          {!loading &&
+            activeTab === "tickets" &&
+            tickets.map((t) => (
               <div key={t.id} style={styles.item}>
                 <p><b>Employee:</b> {t.emp_id}</p>
                 <p><b>Status:</b> {t.status}</p>
                 <p><b>Description:</b> {t.description}</p>
+                <button style={styles.actionBtn} onClick={() => approveTicket(t.id)}>Approve</button>
+                <button style={styles.rejectBtn} onClick={() => rejectTicket(t.id)}>Reject</button>
               </div>
             ))}
         </div>
-
       </div>
     </div>
   );
@@ -116,7 +138,7 @@ const styles = {
     padding: 20,
     display: "flex",
     flexDirection: "column",
-    height: "85vh"   // important for scroll
+    height: "85vh"
   },
   header: {
     display: "flex",
@@ -157,7 +179,7 @@ const styles = {
   },
   listContainer: {
     flex: 1,
-    overflowY: "auto",   // 🔥 scrollbar
+    overflowY: "auto",
     paddingRight: 6
   },
   item: {
@@ -166,5 +188,22 @@ const styles = {
     borderRadius: 10,
     marginBottom: 10,
     fontSize: 14
+  },
+  actionBtn: {
+    marginRight: 8,
+    border: "none",
+    background: "#2f855a",
+    color: "#fff",
+    padding: "6px 10px",
+    borderRadius: 6,
+    cursor: "pointer"
+  },
+  rejectBtn: {
+    border: "none",
+    background: "#c53030",
+    color: "#fff",
+    padding: "6px 10px",
+    borderRadius: 6,
+    cursor: "pointer"
   }
 };
